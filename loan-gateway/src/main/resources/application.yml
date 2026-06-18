@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: loan-gateway
+
+  # Настройки подключения к PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5433/loan_db
+    username: loan_admin
+    password: loan_super_secret_password
+    driver-class-name: org.postgresql.Driver
+    # Настройки пула соединений HikariCP
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  # Настройки JPA / Hibernate
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Настройки подключения к Apache Kafka
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        acks: all
+        retries: 3
+        retry.backoff.ms: 250
+
+# Настройки сетевого уровня
+server:
+  port: 8081
+
+# Настройки Actuator и Micrometer для сбора метрик прометеуса и графаны
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus # Открываем эндпоинты для сбора метрик
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name} # Сквозной тег для Grafana, чтобы группировать метрики по имени сервиса
