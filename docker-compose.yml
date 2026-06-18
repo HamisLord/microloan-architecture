@@ -1,0 +1,120 @@
+version: '3.8'
+
+networks:
+  loan_network:
+    driver: bridge
+
+volumes:
+  postgres_data_v2:
+  redis_data:
+
+services:
+  # ХРАНИЛИЩА ДАННЫХ
+  postgres:
+    image: postgres:16-alpine
+    container_name: loan_postgres
+    environment:
+      POSTGRES_DB: loan_db
+      POSTGRES_USER: loan_admin
+      POSTGRES_PASSWORD: loan_super_secret_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_v2:/var/lib/postgresql/data
+    networks:
+      - loan_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loan_admin -d loan_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: loan_redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - loan_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # БРОКЕР СООБЩЕНИЙ КАФКА
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: loan_kafka
+    ports:
+      - "9092:9092" # внешний порт
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    networks:
+      - loan_network
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # UI для мониторинга топиков кафки
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: loan_kafka_ui
+    ports:
+      - "8080:8080"
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_NAME: 'loan_cluster'
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: 'kafka:29092'
+    networks:
+      - loan_network
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # прометеус для сбора метрик
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: loan_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - loan_network
+    depends_on:
+      - kafka
+
+  # графана для удобных графиков
+  grafana:
+    image: grafana/grafana:10.4.1
+    container_name: loan_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - loan_network
+    depends_on:
+      - prometheus

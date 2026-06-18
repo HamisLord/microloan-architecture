@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 5s # Частота сбора метрик для нагрузочного тестирования
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Сюда Prometheus будет ходить за метриками наших будущих сервисов
+  - job_name: 'loan-gateway-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8081'] # host.docker.internal позволит контейнеру достучаться до приложения, если ты запустишь его локально из IDE
+
+  - job_name: 'scoring-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+
+  - job_name: 'antifraud-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8083']
