@@ -29,22 +29,6 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7.2-alpine
-    container_name: loan_redis
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - loan_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   # БРОКЕР СООБЩЕНИЙ КАФКА
   kafka:
     image: confluentinc/cp-kafka:7.6.0

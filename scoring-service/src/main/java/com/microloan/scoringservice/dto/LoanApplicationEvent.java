@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 @Data
 public class LoanApplicationEvent {
+    private String id;
     private String name;
     private String passport;
     private String email;

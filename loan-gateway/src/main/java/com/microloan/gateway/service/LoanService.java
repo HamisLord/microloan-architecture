@@ -3,6 +3,7 @@ package com.microloan.gateway.service;
 import com.microloan.gateway.LoanGatewayApplication;
 import com.microloan.gateway.dto.LoanCreatedEvent;
 import com.microloan.gateway.dto.LoanRequestDto;
+import com.microloan.gateway.dto.ScoringResult;
 import com.microloan.gateway.entity.LoanApplication;
 import com.microloan.gateway.entity.LoanStatus;
 import com.microloan.gateway.repository.LoanApplicationRepository;
@@ -10,8 +11,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.sql.Template;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -53,4 +58,25 @@ public class LoanService {
 
     }
 
+    public Optional<LoanApplication> getLoanById(UUID id) {
+        return loanApplicationRepository.findById(id);
+    }
+
+    @Transactional
+    public void updateLoanStatus(ScoringResult result) {
+        log.info("Получен ответ от скоринга для заявки: {}", result.getId());
+
+        java.util.UUID loanId = java.util.UUID.fromString(result.getId());
+
+        loanApplicationRepository.findById(loanId).ifPresent(loan -> {
+            if (result.isApproved()) {
+                loan.setStatus(LoanStatus.APPROVED);
+            } else {
+                loan.setStatus(LoanStatus.REJECTED);
+            }
+
+            loanApplicationRepository.save(loan);
+            log.info("Статус заявки {} успешно обновлен на: {}", loanId, loan.getStatus());
+        });
+    }
 }

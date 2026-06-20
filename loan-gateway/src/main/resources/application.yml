@@ -28,13 +28,22 @@ spring:
   # Настройки подключения к Apache Kafka
   kafka:
     bootstrap-servers: localhost:9092
+
+    # 1. Настройки ОТПРАВИТЕЛЯ
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    # 2. Настройки СЛУШАТЕЛЯ
+    consumer:
+      group-id: gateway-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        acks: all
-        retries: 3
-        retry.backoff.ms: 250
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.microloan.gateway.dto.ScoringResult
 
 # Настройки сетевого уровня
 server:
@@ -45,7 +54,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, prometheus # Открываем эндпоинты для сбора метрик
+        include: health, info, prometheus
   endpoint:
     health:
       show-details: always

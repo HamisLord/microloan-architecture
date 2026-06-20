@@ -19,19 +19,19 @@ public class LoanScoringService {
         log.info("Начинается проверка заявки Клиента: {}", event.getName());
 
         if (event.getLoanAmount().compareTo(MAXIMUM_LOAN) > 0) {
-            return new ScoringResult(false, "Сумма превышает лимиты банка: 1 000 000");
+            return new ScoringResult(event.getId(), false, "Сумма превышает лимиты банка: 1 000 000");
         }
 
         if (event.getMonthsTime() > MAXIMUM_MONTHS) {
-            return new ScoringResult(false, "срок кредита превышает допустимые 60 месяцев");
+            return new ScoringResult(event.getId(), false, "срок кредита превышает допустимые 60 месяцев");
         }
 
         BigDecimal monthlyPayment = event.getLoanAmount().divide(BigDecimal.valueOf(event.getMonthsTime()), 2, RoundingMode.HALF_UP);
 
         if (monthlyPayment.compareTo(MINIMUM_LOAN) < 0) {
-            return new ScoringResult(false, "Ежемесячный платеж слишком маленький: " + monthlyPayment);
+            return new ScoringResult(event.getId(), false, "Ежемесячный платеж слишком маленький: " + monthlyPayment);
         }
 
-        return new ScoringResult(true, "Идеальный клиент");
+        return new ScoringResult(event.getId(), true, "Идеальный клиент");
     }
 }
