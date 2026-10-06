@@ -22,8 +22,8 @@ public class LoanController {
 
     @PostMapping
     public ResponseEntity<LoanApplication> createLoan(@Valid @RequestBody LoanRequestDto requestDto) {
-        LoanApplication createLoan = loanService.createLoan(requestDto);
-        return new ResponseEntity<>(createLoan, HttpStatus.CREATED);
+        LoanApplication createdLoan = loanService.createLoan(requestDto);
+        return new ResponseEntity<>(createdLoan, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")

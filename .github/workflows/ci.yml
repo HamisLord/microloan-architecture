@@ -1,0 +1,52 @@
+name: Microservices Integration CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Test ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false # если тесты одного сервиса упадут, второй всё равно дотестируется
+      matrix:
+        service:
+          - loan-gateway
+          - scoring-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+
+      - name: Make Maven Wrapper executable
+        working-directory: ${{ matrix.service }}
+        run: chmod +x mvnw
+
+      - name: Start Infrastructure
+        run: docker compose -f monitoring/docker-compose.yml up -d
+
+      - name: Run Integration Tests
+        working-directory: ${{ matrix.service }}
+
+        run: ./mvnw clean verify
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.service }}
+          path: |
+            ${{ matrix.service }}/target/surefire-reports/
+            ${{ matrix.service }}/target/failsafe-reports/

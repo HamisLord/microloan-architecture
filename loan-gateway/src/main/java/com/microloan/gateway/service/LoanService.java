@@ -1,6 +1,5 @@
 package com.microloan.gateway.service;
 
-import com.microloan.gateway.LoanGatewayApplication;
 import com.microloan.gateway.dto.LoanCreatedEvent;
 import com.microloan.gateway.dto.LoanRequestDto;
 import com.microloan.gateway.dto.ScoringResult;
@@ -10,8 +9,6 @@ import com.microloan.gateway.repository.LoanApplicationRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.sql.Template;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -53,7 +50,6 @@ public class LoanService {
 
         kafkaTemplate.send("new-applications", event.getId(), event);
         log.info("событие успешно отправлено в kafka с ID: {}", event.getId());
-
         return savedApplication;
 
     }
@@ -66,7 +62,7 @@ public class LoanService {
     public void updateLoanStatus(ScoringResult result) {
         log.info("Получен ответ от скоринга для заявки: {}", result.getId());
 
-        java.util.UUID loanId = java.util.UUID.fromString(result.getId());
+        UUID loanId = UUID.fromString(result.getId());
 
         loanApplicationRepository.findById(loanId).ifPresent(loan -> {
             if (result.isApproved()) {
