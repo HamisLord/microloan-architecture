@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      fail-fast: false # если тесты одного сервиса упадут, второй всё равно дотестируется
+      fail-fast: false
       matrix:
         service:
           - loan-gateway
@@ -29,18 +29,12 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-
-      - name: Make Maven Wrapper executable
-        working-directory: ${{ matrix.service }}
-        run: chmod +x mvnw
-
-      - name: Start Infrastructure
-        run: docker compose -f monitoring/docker-compose.yml up -d
+      # Шаг chmod больше не нужен
 
       - name: Run Integration Tests
         working-directory: ${{ matrix.service }}
-
-        run: ./mvnw clean verify
+        # Используем системный mvn вместо ./mvnw
+        run: mvn clean test
 
       - name: Upload Test Results
         if: always()
