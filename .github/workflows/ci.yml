@@ -29,12 +29,18 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Шаг chmod больше не нужен
+      - name: Start Postgres and Kafka
+        # Если docker-compose.yml лежит в папке monitoring, добавьте флаг: -f monitoring/docker-compose.yml
+        # Флаг --wait ожидает статуса "healthy" от healthcheck
+        run: docker compose up -d --wait postgres kafka
 
       - name: Run Integration Tests
         working-directory: ${{ matrix.service }}
-        # Используем системный mvn вместо ./mvnw
         run: mvn clean test
+
+      - name: Stop Infrastructure
+        if: always()
+        run: docker compose down
 
       - name: Upload Test Results
         if: always()
