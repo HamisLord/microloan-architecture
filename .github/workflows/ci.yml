@@ -30,8 +30,6 @@ jobs:
           cache: maven
 
       - name: Start Postgres and Kafka
-        # Если docker-compose.yml лежит в папке monitoring, добавьте флаг: -f monitoring/docker-compose.yml
-        # Флаг --wait ожидает статуса "healthy" от healthcheck
         run: docker compose up -d --wait postgres kafka
 
       - name: Run Integration Tests

@@ -1,8 +1,10 @@
 package com.microloan.gateway.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class ScoringResult {
     private String id;
     private boolean approved;
