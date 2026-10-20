@@ -6,11 +6,11 @@ import com.microloan.gateway.dto.ScoringResult;
 import com.microloan.gateway.entity.LoanApplication;
 import com.microloan.gateway.entity.LoanStatus;
 import com.microloan.gateway.repository.LoanApplicationRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -22,7 +22,7 @@ public class LoanService {
 
     private final LoanApplicationRepository loanApplicationRepository;
 
-    private final KafkaTemplate<String, LoanCreatedEvent> kafkaTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public LoanApplication createLoan(LoanRequestDto dto) {
@@ -48,12 +48,13 @@ public class LoanService {
                 savedApplication.getMonthsTime()
         );
 
-        kafkaTemplate.send("new-applications", event.getId(), event);
-        log.info("событие успешно отправлено в kafka с ID: {}", event.getId());
+        // в kafka событие уйдёт после коммита транзакции, см. LoanEventPublisher
+        eventPublisher.publishEvent(event);
         return savedApplication;
 
     }
 
+    @Transactional(readOnly = true)
     public Optional<LoanApplication> getLoanById(UUID id) {
         return loanApplicationRepository.findById(id);
     }
@@ -64,7 +65,7 @@ public class LoanService {
 
         UUID loanId = UUID.fromString(result.getId());
 
-        loanApplicationRepository.findById(loanId).ifPresent(loan -> {
+        loanApplicationRepository.findById(loanId).ifPresentOrElse(loan -> {
             if (result.isApproved()) {
                 loan.setStatus(LoanStatus.APPROVED);
             } else {
@@ -73,6 +74,6 @@ public class LoanService {
 
             loanApplicationRepository.save(loan);
             log.info("Статус заявки {} успешно обновлен на: {}", loanId, loan.getStatus());
-        });
+        }, () -> log.warn("Заявка {} не найдена, результат скоринга пропущен", loanId));
     }
 }

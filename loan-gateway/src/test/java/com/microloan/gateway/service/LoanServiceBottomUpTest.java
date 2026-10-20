@@ -19,7 +19,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
@@ -36,7 +37,7 @@ class LoanServiceBottomUpTest {
     private KafkaTemplate<String, LoanCreatedEvent> kafkaTemplate;
 
     @Test
-    @DisplayName("Тест 3 (Середина): Сервис сохраняет заявку в реальную БД и триггерит Kafka")
+    @DisplayName("Тест 3 (Середина): Сервис сохраняет заявку в реальную БД, Kafka не трогается до коммита")
     void step3_createLoan_integratesServiceWithRealDatabase() {
         LoanRequestDto dto = new LoanRequestDto();
         dto.setName("Дмитрий Кузнецов");
@@ -52,7 +53,8 @@ class LoanServiceBottomUpTest {
         assertThat(fromDb.get().getStatus()).isEqualTo(LoanStatus.CREATED);
         assertThat(fromDb.get().getName()).isEqualTo("Дмитрий Кузнецов");
 
-        verify(kafkaTemplate).send(eq("new-applications"), eq(created.getId().toString()), any(LoanCreatedEvent.class));
+        // тестовая транзакция откатывается, коммита нет — значит и отправки в Kafka быть не должно
+        verify(kafkaTemplate, never()).send(anyString(), anyString(), any(LoanCreatedEvent.class));
     }
 
     @Test

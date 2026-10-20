@@ -13,7 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -31,13 +31,13 @@ class LoanServiceTest {
     private LoanApplicationRepository loanApplicationRepository;
 
     @Mock
-    private KafkaTemplate<String, LoanCreatedEvent> kafkaTemplate;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private LoanService loanService;
 
     @Test
-    @DisplayName("1. createLoan: должен сохранить заявку со статусом CREATED и отправить событие в Kafka")
+    @DisplayName("1. createLoan: должен сохранить заявку со статусом CREATED и опубликовать событие для Kafka")
     void createLoan_shouldSaveEntityAndSendKafkaEvent() {
         UUID generatedId = UUID.randomUUID();
         LoanRequestDto dto = LoanRequestDto.builder()
@@ -67,7 +67,7 @@ class LoanServiceTest {
         assertThat(appCaptor.getValue().getStatus()).isEqualTo(LoanStatus.CREATED);
 
         ArgumentCaptor<LoanCreatedEvent> eventCaptor = ArgumentCaptor.forClass(LoanCreatedEvent.class);
-        verify(kafkaTemplate).send(eq("new-applications"), eq(generatedId.toString()), eventCaptor.capture());
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
 
         LoanCreatedEvent sentEvent = eventCaptor.getValue();
         assertThat(sentEvent.getId()).isEqualTo(generatedId.toString());
