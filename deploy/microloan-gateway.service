@@ -1,0 +1,16 @@
+[Unit]
+Description=Microloan loan-gateway (REST API, PostgreSQL)
+After=network-online.target kafka-container.service
+Wants=network-online.target kafka-container.service
+
+[Service]
+User=microloan
+WorkingDirectory=/opt/microloan
+# DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, DB_SSLMODE — секреты только на ВМ (chmod 600)
+EnvironmentFile=/etc/microloan/gateway.env
+ExecStart=/usr/bin/java -Xms128m -Xmx384m -jar /opt/microloan/loan-gateway.jar
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

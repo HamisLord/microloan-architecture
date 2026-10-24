@@ -14,9 +14,10 @@ services:
     image: postgres:16-alpine
     container_name: loan_postgres
     environment:
-      POSTGRES_DB: loan_db
-      POSTGRES_USER: loan_admin
-      POSTGRES_PASSWORD: loan_super_secret_password
+      # значения берутся из .env в корне проекта (см. .env.example)
+      POSTGRES_DB: ${DB_NAME:-loan_db}
+      POSTGRES_USER: ${DB_USER:-loan_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
     ports:
       - "5433:5432"
     volumes:
@@ -24,7 +25,7 @@ services:
     networks:
       - loan_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U loan_admin -d loan_db"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5

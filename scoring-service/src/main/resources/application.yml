@@ -1,12 +1,12 @@
 server:
-  port: 8082
+  port: ${SERVER_PORT:8082}
 
 spring:
   application:
     name: scoring-service
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     properties:
       spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer

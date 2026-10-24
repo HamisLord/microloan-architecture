@@ -37,3 +37,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Secrets ###
+.env
+*.env
+!.env.example
+deploy/secrets/

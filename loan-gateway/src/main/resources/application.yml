@@ -2,16 +2,24 @@ spring:
   application:
     name: loan-gateway
 
+  # Локальные секреты (DB_PASSWORD и др.) читаются из .env, который не попадает в git.
+  # Запуск из корня проекта или из папки модуля; переменные окружения имеют приоритет.
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+
   # Настройки подключения к PostgreSQL
   datasource:
-    url: jdbc:postgresql://localhost:5433/loan_db
-    username: loan_admin
-    password: loan_super_secret_password
+    # Все параметры БД задаются переменными окружения; значения по умолчанию — для локального docker-compose
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:loan_db}?sslmode=${DB_SSLMODE:prefer}
+    username: ${DB_USER:loan_admin}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     # Настройки пула соединений HikariCP
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: ${DB_POOL_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
       idle-timeout: 300000
       connection-timeout: 20000
 
@@ -20,14 +28,14 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: true
 
   # Настройки подключения к Apache Kafka
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     # 1. Настройки ОТПРАВИТЕЛЯ
     producer:
@@ -50,7 +58,7 @@ spring:
 
 # Настройки сетевого уровня
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
 
 # Настройки Actuator и Micrometer для сбора метрик прометеуса и графаны
 management:
