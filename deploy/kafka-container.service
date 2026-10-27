@@ -1,0 +1,31 @@
+[Unit]
+Description=Kafka (KRaft, single node) in Docker, only on 127.0.0.1:9092
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=-/usr/bin/docker rm -f kafka
+ExecStart=/usr/bin/docker run --name kafka -p 127.0.0.1:9092:9092 \
+  -e KAFKA_NODE_ID=1 \
+  -e KAFKA_PROCESS_ROLES=broker,controller \
+  -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093 \
+  -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092 \
+  -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT \
+  -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+  -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:29093 \
+  -e KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT \
+  -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+  -e KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1 \
+  -e KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1 \
+  -e KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0 \
+  -e KAFKA_LOG_DIRS=/var/lib/kafka/data \
+  -e KAFKA_HEAP_OPTS="-Xms256m -Xmx512m" \
+  -e CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk \
+  -v kafka_data:/var/lib/kafka/data \
+  confluentinc/cp-kafka:7.6.0
+ExecStop=/usr/bin/docker stop kafka
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

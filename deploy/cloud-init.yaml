@@ -1,0 +1,19 @@
+#cloud-config
+# KT-14: пользователь с SSH-ключом, Java 21 и Docker (для Kafka)
+users:
+  - name: yc-user
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: 'ALL=(ALL) NOPASSWD:ALL'
+    ssh_authorized_keys:
+      - __SSH_PUBLIC_KEY__
+package_update: true
+packages:
+  - openjdk-21-jre-headless
+  - docker.io
+  - postgresql-client
+  - curl
+runcmd:
+  - systemctl enable --now docker
+  - useradd --system --no-create-home --shell /usr/sbin/nologin microloan || true
+  - mkdir -p /opt/microloan /etc/microloan

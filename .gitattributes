@@ -1,0 +1,2 @@
+# файлы для Linux-ВМ (systemd, cloud-init) всегда с LF
+deploy/** text eol=lf

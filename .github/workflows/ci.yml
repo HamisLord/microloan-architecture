@@ -11,6 +11,10 @@ jobs:
     name: Test ${{ matrix.service }}
     runs-on: ubuntu-latest
 
+    # пароль одноразовой тестовой БД в CI; при наличии берётся из секрета репозитория
+    env:
+      DB_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci_ephemeral_db_pw' }}
+
     strategy:
       fail-fast: false
       matrix:
