@@ -5,6 +5,12 @@ spring:
   application:
     name: scoring-service
 
+# антифрод: не больше max-applications заявок с одного паспорта за скользящее окно window
+scoring:
+  antifraud:
+    max-applications: ${ANTIFRAUD_MAX_APPLICATIONS:3}
+    window: ${ANTIFRAUD_WINDOW:24h}
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
